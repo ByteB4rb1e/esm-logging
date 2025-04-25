@@ -4,23 +4,6 @@
     "description": "port of Python standard library logging module",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/ByteB4rb1e/esm-logging.git"
-    },
-    "author": "Tiara Rodney",
-    "license": "UNLICENSED",
-    "main": "index.js",
-    "devDependencies": {
-        "@types/jest": "^29.5.14",
-        "jest": "^29.7.0",
-        "ts-jest": "^29.2.5",
-        "typedoc": "^0.27.7",
-        "typescript": "^5.7.3"
-    },
-    "scripts": {
         "test": "jest",
         "build": "npm run build:release",
         "build:release": "tsc",
@@ -30,5 +13,18 @@
         "doc": "typedoc --entryPoints src/index.ts --html build/doc",
         "mypublish": "ts-node -P tsconfig.node.json scripts/publish.ts",
         "dist": "ts-node -P tsconfig.node.json scripts/pack.ts build/release dist"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ByteB4rb1e/esm-logging.git"
+    },
+    "author": "Tiara Rodney",
+    "license": "UNLICENSED",
+    "devDependencies": {
+        "@types/jest": "^29.5.14",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.3.2",
+        "typedoc": "^0.27.9",
+        "typescript": "^5.8.3"
     }
 }
