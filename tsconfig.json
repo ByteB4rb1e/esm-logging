@@ -9,7 +9,7 @@
         "allowJs": false,
         "declaration": true,
         "declarationMap": true,
-        "outDir": "build/production",
+        "outDir": "build/release",
         "baseUrl": "./",
         "paths": { "*": ["node/modules/*"] },
         "lib": ["esnext.weakref", "dom"]

@@ -22,13 +22,13 @@
     },
     "scripts": {
         "test": "jest",
-        "build": "npm run build:production",
-        "build:production": "tsc",
+        "build": "npm run build:release",
+        "build:release": "tsc",
         "build:debug": "tsc -p tsconfig.debug.json",
         "watch": "npm run watch:debug",
         "watch:debug": "npm run build:debug -- --watch",
         "doc": "typedoc --entryPoints src/index.ts --html build/doc",
         "mypublish": "ts-node -P tsconfig.node.json scripts/publish.ts",
-        "dist": "ts-node -P tsconfig.node.json scripts/pack.ts build/production dist"
+        "dist": "ts-node -P tsconfig.node.json scripts/pack.ts build/release dist"
     }
 }
