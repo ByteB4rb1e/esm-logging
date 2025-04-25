@@ -1,5 +1,5 @@
 {
-    "name": "administratrix/esm-logging",
+    "name": "@administratrix/esm-logging",
     "version": "1.0.0",
     "description": "port of Python standard library logging module",
     "main": "lib/index.js",
