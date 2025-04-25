@@ -1,0 +1,13 @@
+/tests
+/tsconfig*.json
+/src
+/dist
+/autom4te.cache
+/config.*
+/configure*
+/scripts
+/build
+/.gitlab-ci.yml
+/CONTRIBUTING.md
+/jest.config.js
+/Makefile

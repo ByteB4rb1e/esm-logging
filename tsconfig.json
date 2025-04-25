@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "ES2015",
+        "target": "es2015",
         "module": "commonjs",
         "strict": true,
         "sourceMap": false,
@@ -11,7 +11,8 @@
         "declarationMap": true,
         "outDir": "build/production",
         "baseUrl": "./",
-        "paths": { "*": ["node/modules/*"] }
+        "paths": { "*": ["node/modules/*"] },
+        "lib": ["esnext.weakref"]
     },
     "include": [
         "src/**/*.ts"

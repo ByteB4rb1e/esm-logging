@@ -12,21 +12,27 @@
     },
     "author": "Tiara Rodney",
     "license": "UNLICENSED",
+    "main": "index.js",
     "devDependencies": {
         "@types/benchmark": "^2.1.5",
         "@types/jest": "^29.5.14",
+        "@types/yargs": "^17.0.33",
         "benchmark": "^2.1.4",
         "jest": "^29.7.0",
         "ts-jest": "^29.2.5",
-        "ts-node": "^10.9.2",
         "typedoc": "^0.27.7",
-        "typescript": "^5.7.3"
+        "typescript": "^5.7.3",
+        "yargs": "^17.7.2"
     },
     "scripts": {
         "test": "jest",
         "build": "npm run build:production",
         "build:production": "tsc",
         "build:debug": "tsc -p tsconfig.debug.json",
-        "build:documentation": "typedoc --entryPoints src/index.ts --html build/documentation"
+        "watch": "npm run watch:debug",
+        "watch:debug": "npm run build:debug -- --watch",
+        "doc": "typedoc --entryPoints src/index.ts --html build/doc",
+        "mypublish": "ts-node -P tsconfig.node.json scripts/publish.ts",
+        "dist": "ts-node -P tsconfig.node.json scripts/pack.ts build/production dist"
     }
 }
