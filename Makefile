@@ -13,17 +13,26 @@ chore: configure package-lock.json
 configure:
 	autoconf
 
-build/release: node_modules/ src/ tsconfig.json
+build/release: node_modules/ src/ tsconfig.json $(if $(CI),,test-reports)
+ifdef CI
+	$(warning CI set, tests skipped and requiring manual execution)
+endif
 	$(NPM) run build:release
 
 build/debug: node_modules/ src/ tsconfig.debug.json
-	$(NPM) run build:debug
+ifdef WATCH
+	$(warning WATCH set, will build with watch mode)
+endif
+	$(NPM) run build:debug $(if $(WATCH),-- --watch)
 
 build/doc: node_modules/ src/ typedoc.json tsconfig.json
 	$(NPM) run doc
 
 test-reports: node_modules/ tests/ src/ jest.config.mjs
-	$(NPM) run test
+ifdef WATCH
+	$(warning WATCH set, will test with watch mode)
+endif
+	$(NPM) run test $(if $(WATCH),-- --watchAll)
 
 dist: build/release/ build/doc/
 	$(NPM) run dist -- build/doc/
