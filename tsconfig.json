@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "module": "commonjs",
+        "strict": true,
+        "sourceMap": false,
+        "esModuleInterop": true,
+        "resolveJsonModule": false,
+        "allowJs": false,
+        "declaration": true,
+        "declarationMap": true,
+        "outDir": "build/production",
+        "baseUrl": "./",
+        "paths": { "*": ["node/modules/*"] }
+    },
+    "include": [
+        "src/**/*.ts"
+    ]
+}
