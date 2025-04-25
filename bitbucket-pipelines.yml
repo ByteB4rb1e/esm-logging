@@ -26,6 +26,7 @@ definitions:
                 - build/debug/**/*
                 - build/debug/*
             script:
+                - make clean
                 - make build/debug CI=1
         - step: &build-release
             name: Build (Release)
@@ -35,6 +36,7 @@ definitions:
                 - build/release/**/*
                 - build/release/*
             script:
+                - make clean
                 - make build/release CI=1
         - step: &build-doc
             name: Build (Doc)
@@ -44,6 +46,7 @@ definitions:
                 - build/doc/**/*
                 - build/doc/*
             script:
+                - make clean
                 - make build/doc CI=1
         - step: &dist
             name: Package
@@ -52,6 +55,7 @@ definitions:
             artifacts:
                 - dist/*
             script:
+                - rm -rvf test-reports/
                 - make dist CI=1
 pipelines:
     default:
