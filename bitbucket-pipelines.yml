@@ -1,0 +1,71 @@
+image: administratrix/cicd:latest
+definitions:
+    steps:
+        - step: &configure
+            name: Configure
+            caches:
+                - node
+            artifacts:
+                - config.log
+                - config.status
+            script:
+                - sh configure
+        - step: &test
+            name: Test
+            caches:
+                - node
+            artifacts:
+                - test-reports/*
+            script:
+                - make test-reports
+        - step: &build-debug
+            name: Build (Debug)
+            caches:
+                - node
+            artifacts:
+                - build/debug/**/*
+                - build/debug/*
+            script:
+                - make build/debug CI=1
+        - step: &build-release
+            name: Build (Release)
+            caches:
+                - node
+            artifacts:
+                - build/release/**/*
+                - build/release/*
+            script:
+                - make build/release CI=1
+        - step: &build-doc
+            name: Build (Doc)
+            caches:
+                - node
+            artifacts:
+                - build/doc/**/*
+                - build/doc/*
+            script:
+                - make build/doc CI=1
+        - step: &dist
+            name: Package
+            caches:
+                - node
+            artifacts:
+                - dist/*
+            script:
+                - make dist CI=1
+pipelines:
+    default:
+        - step: *configure
+        - parallel:
+            steps:
+                - step: *test
+                - step: *build-debug
+    branches:
+        master:
+            - step: *configure
+            - step: *test
+            - parallel:
+                steps:
+                    - step: *build-doc
+                    - step: *build-release
+            - step: *dist
