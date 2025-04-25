@@ -8,3 +8,4 @@ config.status
 autom4te.cache
 /dist
 .DS_Store
+/test-reports/

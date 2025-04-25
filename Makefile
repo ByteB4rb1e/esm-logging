@@ -1,8 +1,8 @@
 NPM=npm
 
-.PHONY: configure chore package-lock.json publish dist
+.PHONY: configure chore package-lock.json publish dist test-reports
 
-all: dist
+all: test-reports/ dist/
 
 tags:
 	ctags -R --exclude=node_modules --exclude=vendor --exclude=docs \
@@ -13,16 +13,16 @@ chore: configure package-lock.json
 configure:
 	autoconf
 
-build/release/: node_modules/ src/ tsconfig.json
+build/release: node_modules/ src/ tsconfig.json
 	$(NPM) run build:release
 
-build/debug/: node_modules/ src/ tsconfig.debug.json
+build/debug: node_modules/ src/ tsconfig.debug.json
 	$(NPM) run build:debug
 
-build/doc/: node_modules/ src/ typedoc.json tsconfig.json
+build/doc: node_modules/ src/ typedoc.json tsconfig.json
 	$(NPM) run doc
 
-test-reports/: node_modules/ tests/ src/ jest.config.mjs
+test-reports: node_modules/ tests/ src/ jest.config.mjs
 	$(NPM) run test
 
 dist: build/release/ build/doc/

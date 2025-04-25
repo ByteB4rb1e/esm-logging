@@ -10,7 +10,9 @@ describe('getLevelName', () => {
     var logging: any;
 
     beforeEach(() => {
-        logging = require('../src/logging');
+        // there are a couple of singletons, which I'm not yet sure if they need
+        // to be reloaded for every test case
+        logging = require('../src');
     });
 
     it('numeric to textual representation of built-ins', () => {
@@ -73,7 +75,7 @@ describe('addLevelName', () => {
     var logging: any;
 
     beforeEach(() => {
-        logging = require('../src/logging');
+        logging = require('../src');
     });
 
     it('numeric to textual representation of built-ins', () => {

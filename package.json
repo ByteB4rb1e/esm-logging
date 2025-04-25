@@ -8,10 +8,8 @@
         "build": "npm run build:release",
         "build:release": "tsc",
         "build:debug": "tsc -p tsconfig.debug.json",
-        "watch": "npm run watch:debug",
-        "watch:debug": "npm run build:debug -- --watch",
         "doc": "typedoc --entryPoints src/index.ts --html build/doc",
-        "mypublish": "ts-node -P tsconfig.node.json scripts/publish.ts",
+        "publish_": "ts-node -P tsconfig.node.json scripts/publish.ts",
         "dist": "ts-node -P tsconfig.node.json scripts/npm-pack.ts build/release dist"
     },
     "repository": {
@@ -23,6 +21,7 @@
     "devDependencies": {
         "@types/jest": "^29.5.14",
         "jest": "^29.7.0",
+        "jest-junit": "^16.0.0",
         "ts-jest": "^29.3.2",
         "ts-node": "^10.9.2",
         "typedoc": "^0.27.9",
