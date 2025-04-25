@@ -1,14 +1,14 @@
 {
     "compilerOptions": {
         "target": "es2015",
-        "module": "commonjs",
+        "module": "nodenext",
         "strict": true,
         "sourceMap": false,
         "esModuleInterop": true,
         "resolveJsonModule": false,
         "allowJs": false,
-        "declaration": true,
-        "declarationMap": true,
+        "declaration": false,
+        "declarationMap": false,
         "outDir": "build/release",
         "baseUrl": "./",
         "paths": { "*": ["node/modules/*"] },
