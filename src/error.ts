@@ -17,4 +17,10 @@ export class KeyError extends MyError {
     }
 }
 
+export class ValueError extends MyError {
+    constructor(msg: string) {
+        super(msg);
+    }
+}
+
 export type StackTrace = string;

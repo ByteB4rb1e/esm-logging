@@ -2,25 +2,49 @@
  * Logging module
  *
  * This is a partial port of the logging package of the Python standard 
- * library.
+ * library. Why port this? Well, I've been working with a lot of different
+ * standard logging modules throughout my endeavours and the standard Python 
+ * logging is the one that comes closest to what I would expect from a logging 
+ * module when collaboratively developing.
  *
- * There is no point in porting the threading module. I thought about how I
- * would/could make the Python logging use the asyncio instead of the 
- * threading from the standard library .
+ * There is no point in porting the approach of parallelism from the Python
+ * module as we don't have that option with browser-side JavaScript. I'm still
+ * thinking of how this could be properly abstracted for asynchronicty, but at
+ * this point in time there aren't that many blocking routines in the code, so
+ * performance gain would be marginal.
  *
  * Why do we need our own logging library?
  *
  * Logging is essential for collaboration. It serves as a tool for debugging,
  * communicates operational excellence, and is generally required for
- * security conformance.
+ * security conformance. Log, log, log and stop worrying so much about
+ * performance impact. If logging is a bottle-neck for you, you're simply using
+ * a shitty logging library. Mark my words: If this library becomes a
+ * bottle-neck, it's time to refactor! Let's start from scratch and get it right
+ * the first time!
  *
- * * Integrate into third-party systems
+ * Why are channels now named scopes and why is the scope not a property of a
+ * log record anymore?
+ * 
+ * First, the documentation of the logging library is inconsistent with the
+ * naming of what the nesting of loggers is actually called. In addition,
+ * considering them as a property of something makes us run into naming
+ * conflicts with built-in words, like with the "name" property. This conflicts
+ * with ECMA script. Therefore, we rename "channels" to "scopes" and consider
+ * them independent from the object they're associated with.
+ *
+ * Important features:
+ *
+ * * third-party integration
  * * OCSF-compliant logging
+ * * formatting
+ * * flexible log levels
+ * * filtering
  *
  * If an unhandled error occurs, there should be a (pop-up) alert on browsers,
  * in addition to a forceful flush of any logs destined to (abstract) stderr.
  */
-import { NotImplementedError, KeyError, StackTrace } from '../error';
+import { NotImplementedError, ValueError, KeyError, StackTrace } from '../error';
 
 export const CRITICAL = 50;
 export const FATAL = CRITICAL;
@@ -49,12 +73,13 @@ const NAMETOLEVEL: {[key: string]: number} = {
     NOTSET: NOTSET,
 }
 
-
 export type LogLevel = number;
 
 export type ExecutionInfo = [string, Error, StackTrace];
 
-
+/**
+ * context of a logging event/trigger
+ */
 export interface LogOptions{
     excInfo: ExecutionInfo|Error|null,
     extra: {[key: string]: any}|null,
@@ -62,6 +87,9 @@ export interface LogOptions{
     stackLevel: number
 }
 
+/**
+ * options for instantiating a new log record
+ */
 export interface LogRecordOptions {
     level: number,
     file?: string,
@@ -83,9 +111,9 @@ function getLevelNamesMapping() {
  */
 function getLevelName(level: number): string|number {
     var result: string|number = LEVELTONAME[level];
-    if (result !== undefined) { return result; }
+    if (result !== undefined) { return result }
     result = NAMETOLEVEL[level];
-    if (result !== undefined) { return result; }
+    if (result !== undefined) { return result }
     return `Level ${level}`;
 }
 
@@ -109,8 +137,10 @@ function addLevelName(level: number, levelName: string) {
  * logging call was made, and any exception information to be logged.
  */
 export class LogRecord {
-    constructor(scope: string, options: LogRecordOptions) {
+    public readonly levelno: LogLevel
 
+    constructor(scope: string, options: LogRecordOptions) {
+        this.levelno = options.level;
     }
 }
 
@@ -203,10 +233,11 @@ export class Filterer {
      *
      * @param filter
      */
-    filter(scope: string, record: LogRecord): boolean {
-        var result: null|LogRecord = null;
+    filter(scope: string, record: LogRecord): LogRecord|null {
 
         for (var i = 0; i < this.filters.length; i += 1) {
+            let result: boolean|LogRecord = false;
+
             let filter = this.filters[i];
 
             if (typeof (filter as Filter).filter == 'function') {
@@ -216,10 +247,12 @@ export class Filterer {
                 result = (filter as unknown as FilterCallable)(scope, record)
             }
 
-            if (!result) { return false }
+            if (!result) { return null }
+
+            if ((result as any) instanceof LogRecord) { record = result as unknown as LogRecord }
         }
 
-        return true
+        return record
     }
 }
 
@@ -266,6 +299,7 @@ const DEFAULTLOGOPTIONS: LogOptions = {
 
 export type LoggerClass = { new(): Logger };
 
+var throwErrors: boolean = true;
 
 /**
  * Instances of the logger class represent a single logging channel. A 'logging
@@ -291,7 +325,14 @@ export class Logger extends Filterer {
     public readonly disabled: boolean = false;
     private cache: {[key: number]: boolean} = {};
 
-    constructor(scope: string, level: LogLevel, manager?: Manager) {
+    /**
+     * Initialize the logger with a name and an optional level
+     *
+     * @param scope - 
+     * @param level -
+     * @param manager -
+     */
+    constructor(scope: string, level?: LogLevel, manager?: Manager) {
         super();
 
         this.scope = scope;
@@ -354,7 +395,7 @@ export class Logger extends Filterer {
      * ```
      */
     public debug(msg: string, options?: LogOptions) {
-        if (this.isEnabledFor(DEBUG)) { this.log(DEBUG, msg, options) }
+        if (this.isEnabledFor(DEBUG)) { this._log(DEBUG, msg, options) }
     }
 
     /**
@@ -398,7 +439,7 @@ export class Logger extends Filterer {
      * Low-level logging routine which creates a LogRecord and then calls the
      * handlers of this logger to handle the record.
      */
-    protected log(level: LogLevel, msg: string, options?: LogOptions) {
+    protected _log(level: LogLevel, msg: string, options?: LogOptions) {
         options = options ?? DEFAULTLOGOPTIONS;
         options = { ...DEFAULTLOGOPTIONS, ...options };
 
@@ -418,6 +459,62 @@ export class Logger extends Filterer {
         }
 
         var record = this.makeRecord(this.scope, level, msg, options)
+    }
+
+    /**
+     * Call the handlers for the specified record.
+     *
+     * This method is used for unpickled records received from a socket, as well
+     * as those created locally. Logger-level filtering is applied.
+     */
+    protected handle(scope: string, record: LogRecord) {
+        if (this.disabled) { return }
+        var maybeRecord = this.filter(scope, record);
+        if (!maybeRecord) { return }
+        if ((maybeRecord as any) instanceof LogRecord) { record = maybeRecord }
+        this.callHandlers(scope, record)
+    }
+
+    /**
+     * Pass a record to all relevant handlers.
+     *
+     * Loop through all handlers for this logger and its parents n the logger
+     * hierarchy. If no handler was found, output a one-off error message to
+     * sys.stderr. Stop searching up the hierarchy whenever a logger with the
+     * "propagate" attribute set to zero is found - that will be the last logger
+     * whose handlers are called.
+     */
+    protected callHandlers(scope: string, record: LogRecord) {
+        var c: Logger|null = this;
+        var found = 0;
+
+        while (c) {
+            for (var i = 0; i < c.handlers.length; i += 1) {
+                let hdlr = c.handlers[i];
+
+                found = found + 1;
+
+                if (record.levelno >= hdlr.level) { hdlr.handle(record) }
+            }
+
+            if (!c.propagate) { c = null }
+            else { c = c.parent_ }
+        }
+
+        if (found == 0) {
+            if (lastResort) {
+                if (record.levelno >= lastResort.level) {
+                    lastResort.handle(record)
+                }
+                else if (throwErrors && (this.manager && !this.manager.emittedNoHandlerWarning)) {
+                    console.error(
+                        `No handlers could be found for logger ${this.scope}`
+                    );
+
+                    this.manager.emittedNoHandlerWarning = true;
+                }
+            }
+        }
     }
 
     public clear() {
@@ -467,7 +564,7 @@ export class Placeholder {
 export class Manager {
     public readonly rootLogger: RootLogger;
     protected _disable: number = 0;
-    protected emittedNoHandlerWarning: boolean = false;
+    public emittedNoHandlerWarning: boolean = false;
     protected loggers: {[key: string]: Logger} = {};
     protected _loggerClass: LoggerClass|null = null;
     protected _logRecordFactory: LogRecordFactory|null = null;
@@ -542,3 +639,263 @@ export class Manager {
         });
     }
 }
+
+export interface PercentFormatterStyleOptions {
+    fmt?: string,
+    defaults: {[key: string]: any};
+}
+
+class PercentFormatterStyle {
+    public static defaultFormat = '%(message)s';
+    public static asctimeFormat = '%(asctime)s';
+    public static asctimeSearch = '%(asctime)';
+    public static validationPattern = 
+        /%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]/;
+
+    private fmt: string;
+    private defaults: {[key: string]: any};
+
+    constructor(options: PercentFormatterStyleOptions) {
+        this.fmt = options.fmt ?? PercentFormatterStyle.defaultFormat;
+        this.defaults = options.defaults;
+    }
+
+    usesTime(): boolean {
+        return  this.fmt.match(PercentFormatterStyle.asctimeFormat) ? true : false
+    }
+
+    /**
+     * Validate the input format, ensure it matches the correct style
+     */
+    validate() {
+        if (!this.fmt.search(PercentFormatterStyle.validationPattern)) {
+            throw new ValueError(
+                `Invalid format '${this.fmt}' for ` +
+                `'${PercentFormatterStyle.defaultFormat[0]}'`
+            )
+        }
+    }
+
+    protected _format(record: LogRecord): string {
+        var defaults = this.defaults;
+        var values: {[key: string]: any}|null;
+        if (defaults) { values = {...this.defaults, ...Object.entries(record)} }
+        else { values = Object.entries(record) }
+        //TODO: implement formatting
+        return 'would do some formatting';
+    }
+
+    format(record: LogRecord): string {
+        try {
+            return this._format(record)
+        }
+        catch (e) {
+            throw new ValueError(`formatting field not found in record: ${e}`)
+        }
+    }
+}
+
+const basicFormat = '%(level)s:%(name)s:%(message)s';
+
+const styles: {[key: string]: [{ new(options: PercentFormatterStyleOptions): PercentFormatterStyle}, string]} = {
+    '%': [PercentFormatterStyle, basicFormat],
+}
+
+export interface FormatterOptions {
+    fmt?: string
+    datefmt?: any
+    style: string
+    validate: boolean
+    defaults?: {[key: string]: any}
+}
+
+export class Formatter {
+    public static defaultTimeFormat = '%Y-%M';
+    public static defaultMsecFormat = '%s,%30d';
+
+    protected style: any;
+    protected fmt: string;
+    protected datefmt: any;
+
+    /**
+     * Initialize the formatter with specified format strings.
+     *
+     * Initialize the formatter either with the specified format string, or a
+     * default as described above. Allow for specialized date formatting with
+     * the optional datefmt argument. If datefmt is omitted, you get an
+     * ISO8601-like (or RFC 3339-like) format.
+     *
+     * Use a style parameter of '%', '{' or '$' to specify that you want to
+     * use one of %-formatting, :meth:`str.format` (``{}``) formatting or
+     * :class:`string.Template` formatting in your format string.
+     */
+    constructor(options: FormatterOptions) {
+        if (!Object.keys(styles).includes(options.style)) {
+            throw new ValueError(`style must be one of: ${Object.keys(styles).join(', ')}`)
+        }
+
+        this.style = new styles[options.style][0]({
+            fmt: options.fmt,
+            defaults: options.defaults ?? {}
+        });
+
+        if (options.validate) { this.style.validate() }
+
+        this.fmt = this.style.fmt;
+
+        this.datefmt = options.datefmt;
+    }
+
+    /**
+     * Return the creation time of the specified LogRecord as formatted text.
+     * 
+     * This method should be called from format() by a formatter which
+     * wants to make use of a formatted time. This method can be overridden
+     * in formatters to provide for any specific requirement, but the
+     * basic behaviour is as follows: if datefmt (a string) is specified,
+     * it is used with time.strftime() to format the creation time of the
+     * record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.
+     * The resulting string is returned. This function uses a user-configurable
+     * function to convert the creation time to a tuple. By default,
+     * time.localtime() is used; to change this for a particular formatter
+     * instance, set the 'converter' attribute to a function with the same
+     * signature as time.localtime() or time.gmtime(). To change it for all
+     * formatters, for example if you want all logging times to be shown in GMT,
+     * set the 'converter' attribute in the Formatter class.
+     */
+    formatTime(record: LogRecord, datefmt?: any): string {
+        var ct = this.convert(record.created);
+
+        if (datefmt) {
+            //TODO: time.strftime
+        }
+        else {
+            //TODO: time.strftime
+        }
+
+        return 'some time';
+    }
+
+    /**
+     * Format and return the specified exception information as a string.
+
+     * This default implementation just uses
+     * traceback.print_exception()
+     */
+    formatError(ei): string {
+        //TODO
+        return 'some error';
+    }
+
+
+}
+
+const handlers: {[key: string]: Handler} = {}; // map of handler names to
+                                               // handlers
+const handlerList = []; // added to allow handlers to be removed in reverse
+                        // order of initialization
+
+export class Handler extends Filterer {
+
+    protected _scope: string|null = null;
+    protected formatter: string|null = null;
+    protected _level: number;
+    protected _closed: boolean = false;
+
+    constructor(level: LogLevel) {
+        super(level);
+        this.level = checkLevel(level);
+        // Add the handler to the global handlerList (for cleanup on shutdown)
+        addHandlerRef(this);
+    }
+
+    get level(): number { return this._level }
+    set level(level: LogLevel|string) { this.level = checkLevel(level) }
+
+    get scope(): string|null { return this._scope }
+    set scope(scope: string) { this._scope = scope }
+    get closed(): boolean { return this._closed }
+
+    /**
+     * Format the specified record.
+     * 
+     * If a formatter is set, use it. Otherwise, use the default formatter for
+     * the module.
+     */
+    format(record: LogRecord) {
+        var fmt: Formatter|null = null;
+
+        if (this.formatter) { fmt = this.formatter }
+        else { fmt = defaultFormatter }
+    }
+
+    /**
+     * Do whatever it takes to actually log the specified logging record.
+     *
+     * This version is intended to be implemented by subclasses and so raises a
+     * NotImplementedError.
+     */
+    emit(record: LogRecord) {
+        throw new NotImplementedError(
+            'emit must be implemented by Handler subclass'
+        )
+    }
+
+    /**
+     * Conditionally emit the specfied logging record.
+     *
+     * Emission depends on filters which may have been added to the handler.
+     * Wrap the actual emission of the record with acquisition/release of the
+     * I/O thread lock.
+     */
+     handle() {
+        var rv = this.filter(record);
+        if ((rv as any) instanceof LogRecord) { record = rv }
+        if (rv) {
+            //locking here
+            this.emit(record)
+        }
+    }
+
+    /**
+     * Tidy up any resources used by the handler
+     *
+     * This version removes the handler from an internal map of handlers, which
+     * is used for handler lookup by scope. Subclasses should ensure that this
+     * gets called from overriden close() methods.
+     */
+    close() {
+        this._closed = true;
+
+        if (this.scope && handlers.keys().includes(this.scope)) {
+            delete handlers[this.scope]
+        }
+    }
+
+    /**
+     * Handle errors which occur during an emit() call.
+     *
+     * This method should be called from handlers when an exception is
+     * encountered during an emit() call. If raiseExceptions is false,
+     * exceptions get silently ignored. This is what is mostly wanted
+     * for a logging system - most users will not care about errors in
+     * the logging system, they are more interested in application errors.
+     * You could, however, replace this with a custom handler if you wish.
+     * The record which was being processed is passed in to this method.
+     */
+    handleError(record: LogRecord) {
+        throw new NotImplementedError(
+            'still need to find portable way for stacktracing...'
+        )
+    }
+}
+
+export class StderrHandler extends Handler {
+
+    constructor(level: LogLevel) {
+        super();
+    }
+}
+
+const defaultLastResort = StderrHandler(WARNING);
+export var lastResort = defaultLastResort;
