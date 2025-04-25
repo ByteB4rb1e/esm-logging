@@ -74,7 +74,13 @@
  * * Formatters specify the layout of log records in the final output.
  * @module logging
  */
-import { NotImplementedError, MyError, ValueError, KeyError, StackTrace } from '../error';
+import { 
+    KeyError,
+    MyError,
+    NotImplementedError,
+    StackTrace,
+    ValueError,
+} from './helper/error';
 
 export const CRITICAL = 50;
 export const FATAL = CRITICAL;
