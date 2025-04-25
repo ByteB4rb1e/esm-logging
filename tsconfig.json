@@ -12,7 +12,7 @@
         "outDir": "build/production",
         "baseUrl": "./",
         "paths": { "*": ["node/modules/*"] },
-        "lib": ["esnext.weakref"]
+        "lib": ["esnext.weakref", "dom"]
     },
     "include": [
         "src/**/*.ts"
