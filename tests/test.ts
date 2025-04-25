@@ -2,7 +2,7 @@ import {expect, jest, test} from '@jest/globals';
 
 describe('Logger', () => {
     it('can be instantiated', () => {
-        //const logger = new logging.Logger('test', 0);
+        //const logger = new logging.log_level.Logger('test', 0);
     })
 });
 
@@ -17,56 +17,56 @@ describe('getLevelName', () => {
 
     it('numeric to textual representation of built-ins', () => {
         expect(
-            logging.getLevelName(logging.CRITICAL)
+            logging.log_level.getLevelName(logging.log_level.CRITICAL)
         ).toBe('CRITICAL');
         expect(
-            logging.getLevelName(logging.FATAL)
+            logging.log_level.getLevelName(logging.log_level.FATAL)
         ).toBe('CRITICAL');
         expect(
-            logging.getLevelName(logging.ERROR)
+            logging.log_level.getLevelName(logging.log_level.ERROR)
         ).toBe('ERROR');
         expect(
-            logging.getLevelName(logging.WARNING)
+            logging.log_level.getLevelName(logging.log_level.WARNING)
         ).toBe('WARNING');
         expect(
-            logging.getLevelName(logging.WARN)
+            logging.log_level.getLevelName(logging.log_level.WARN)
         ).toBe('WARNING');
         expect(
-            logging.getLevelName(logging.INFO)
+            logging.log_level.getLevelName(logging.log_level.INFO)
         ).toBe('INFO');
         expect(
-            logging.getLevelName(logging.DEBUG)
+            logging.log_level.getLevelName(logging.log_level.DEBUG)
         ).toBe('DEBUG');
         expect(
-            logging.getLevelName(logging.NOTSET)
+            logging.log_level.getLevelName(logging.log_level.NOTSET)
         ).toBe('NOTSET');
     });
 
     it('textual to numeric representation of built-ins', () => {
         expect(
-            logging.getLevelName('CRITICAL')
-        ).toBe(logging.CRITICAL);
+            logging.log_level.getLevelName('CRITICAL')
+        ).toBe(logging.log_level.CRITICAL);
         expect(
-            logging.getLevelName('FATAL')
+            logging.log_level.getLevelName('FATAL')
         ).toBe(`Level FATAL`);
         expect(
-            logging.getLevelName('ERROR')
-        ).toBe(logging.ERROR);
+            logging.log_level.getLevelName('ERROR')
+        ).toBe(logging.log_level.ERROR);
         expect(
-            logging.getLevelName('WARNING')
-        ).toBe(logging.WARNING);
+            logging.log_level.getLevelName('WARNING')
+        ).toBe(logging.log_level.WARNING);
         expect(
-            logging.getLevelName('WARN')
+            logging.log_level.getLevelName('WARN')
         ).toBe('Level WARN');
         expect(
-            logging.getLevelName('INFO')
-        ).toBe(logging.INFO);
+            logging.log_level.getLevelName('INFO')
+        ).toBe(logging.log_level.INFO);
         expect(
-            logging.getLevelName('DEBUG')
-        ).toBe(logging.DEBUG);
+            logging.log_level.getLevelName('DEBUG')
+        ).toBe(logging.log_level.DEBUG);
         expect(
-            logging.getLevelName('NOTSET')
-        ).toBe(logging.NOTSET);
+            logging.log_level.getLevelName('NOTSET')
+        ).toBe(logging.log_level.NOTSET);
     });
 });
 
@@ -79,8 +79,8 @@ describe('addLevelName', () => {
     });
 
     it('numeric to textual representation of built-ins', () => {
-        logging.addLevelName(80, 'FOOBAR');
-        expect(logging.getLevelName(80)).toBe('FOOBAR');
-        expect(logging.getLevelName('FOOBAR')).toBe(80);
+        logging.log_level.addLevelName(80, 'FOOBAR');
+        expect(logging.log_level.getLevelName(80)).toBe('FOOBAR');
+        expect(logging.log_level.getLevelName('FOOBAR')).toBe(80);
     })
 });
