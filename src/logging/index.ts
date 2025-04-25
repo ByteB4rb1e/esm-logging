@@ -44,7 +44,7 @@
  * If an unhandled error occurs, there should be a (pop-up) alert on browsers,
  * in addition to a forceful flush of any logs destined to (abstract) stderr.
  */
-import { NotImplementedError, ValueError, KeyError, StackTrace } from '../error';
+import { NotImplementedError, MyError, ValueError, KeyError, StackTrace } from '../error';
 
 export const CRITICAL = 50;
 export const FATAL = CRITICAL;
@@ -128,6 +128,8 @@ function addLevelName(level: number, levelName: string) {
     NAMETOLEVEL[level] = level;
 }
 
+export type MillisecondsSinceUnixEpoch = number;
+
 /**
  * LogRecord instances are created every time something is logged. They contain
  * all the information pertinent to  the event being logged. The main
@@ -137,10 +139,16 @@ function addLevelName(level: number, levelName: string) {
  * logging call was made, and any exception information to be logged.
  */
 export class LogRecord {
-    public readonly levelno: LogLevel
+    public readonly levelno: LogLevel;
+    public readonly levelname: string|LogLevel;
+    public readonly scope: string;
+
+    public readonly created: MillisecondsSinceUnixEpoch = Date.now();
 
     constructor(scope: string, options: LogRecordOptions) {
         this.levelno = options.level;
+        this.levelname = getLevelName(options.level);
+        this.scope = scope;
     }
 }
 
@@ -182,14 +190,14 @@ export class Filter {
      * @param - scope of log record to inspect
      * @param - log record to inspect
      */
-    filter(scope: string, record: LogRecord): boolean {
-        if (this.slen == 0 || this.scope == scope) { return true }
-        else if (!scope.substring(0, this.slen)) { return false }
-        return (scope[this.slen] == '.')
+    filter(record: LogRecord): boolean {
+        if (this.slen == 0 || this.scope == record.scope) { return true }
+        else if (!record.scope.substring(0, this.slen)) { return false }
+        return (record.scope[this.slen] == '.')
     }
 }
 
-export type FilterCallable = (scope: string, record: LogRecord) => boolean;
+export type FilterCallable = (record: LogRecord) => boolean;
 
 export class Filterer {
     filters: Filter[] = [];
@@ -233,7 +241,7 @@ export class Filterer {
      *
      * @param filter
      */
-    filter(scope: string, record: LogRecord): LogRecord|null {
+    filter(record: LogRecord): LogRecord|null {
 
         for (var i = 0; i < this.filters.length; i += 1) {
             let result: boolean|LogRecord = false;
@@ -241,10 +249,10 @@ export class Filterer {
             let filter = this.filters[i];
 
             if (typeof (filter as Filter).filter == 'function') {
-                result = (filter as Filter).filter(scope, record)
+                result = (filter as Filter).filter(record)
             }
             else {
-                result = (filter as unknown as FilterCallable)(scope, record)
+                result = (filter as unknown as FilterCallable)(record)
             }
 
             if (!result) { return null }
@@ -469,10 +477,10 @@ export class Logger extends Filterer {
      */
     protected handle(scope: string, record: LogRecord) {
         if (this.disabled) { return }
-        var maybeRecord = this.filter(scope, record);
+        var maybeRecord = this.filter(record);
         if (!maybeRecord) { return }
         if ((maybeRecord as any) instanceof LogRecord) { record = maybeRecord }
-        this.callHandlers(scope, record)
+        this.callHandlers(record)
     }
 
     /**
@@ -484,7 +492,7 @@ export class Logger extends Filterer {
      * "propagate" attribute set to zero is found - that will be the last logger
      * whose handlers are called.
      */
-    protected callHandlers(scope: string, record: LogRecord) {
+    protected callHandlers(record: LogRecord) {
         var c: Logger|null = this;
         var found = 0;
 
@@ -704,8 +712,8 @@ const styles: {[key: string]: [{ new(options: PercentFormatterStyleOptions): Per
 export interface FormatterOptions {
     fmt?: string
     datefmt?: any
-    style: string
-    validate: boolean
+    style?: string
+    validate?: boolean
     defaults?: {[key: string]: any}
 }
 
@@ -730,16 +738,19 @@ export class Formatter {
      * :class:`string.Template` formatting in your format string.
      */
     constructor(options: FormatterOptions) {
-        if (!Object.keys(styles).includes(options.style)) {
+        var style = options.style ?? '%';
+        var validate = options.validate ?? true;
+
+        if (!Object.keys(styles).includes(style ?? '')) {
             throw new ValueError(`style must be one of: ${Object.keys(styles).join(', ')}`)
         }
 
-        this.style = new styles[options.style][0]({
+        this.style = new styles[style][0]({
             fmt: options.fmt,
             defaults: options.defaults ?? {}
         });
 
-        if (options.validate) { this.style.validate() }
+        if (validate) { this.style.validate() }
 
         this.fmt = this.style.fmt;
 
@@ -764,8 +775,8 @@ export class Formatter {
      * set the 'converter' attribute in the Formatter class.
      */
     formatTime(record: LogRecord, datefmt?: any): string {
-        var ct = this.convert(record.created);
 
+        //TODO: record.created
         if (datefmt) {
             //TODO: time.strftime
         }
@@ -782,7 +793,7 @@ export class Formatter {
      * This default implementation just uses
      * traceback.print_exception()
      */
-    formatError(ei): string {
+    formatError(ei: MyError): string {
         //TODO
         return 'some error';
     }
@@ -792,19 +803,25 @@ export class Formatter {
 
 const handlers: {[key: string]: Handler} = {}; // map of handler names to
                                                // handlers
-const handlerList = []; // added to allow handlers to be removed in reverse
+const handlerList: WeakRef<Handler>[] = []; // added to allow handlers to be removed in reverse
                         // order of initialization
+
+function addHandlerRef(handler: Handler) {
+    handlerList.push(new WeakRef(handler));
+}
+
+const defaultFormatter = new Formatter({});
 
 export class Handler extends Filterer {
 
     protected _scope: string|null = null;
-    protected formatter: string|null = null;
+    protected formatter: Formatter|null = null;
     protected _level: number;
     protected _closed: boolean = false;
 
     constructor(level: LogLevel) {
-        super(level);
-        this.level = checkLevel(level);
+        super();
+        this._level = checkLevel(level);
         // Add the handler to the global handlerList (for cleanup on shutdown)
         addHandlerRef(this);
     }
@@ -848,9 +865,11 @@ export class Handler extends Filterer {
      * Wrap the actual emission of the record with acquisition/release of the
      * I/O thread lock.
      */
-     handle() {
+     handle(record: LogRecord) {
         var rv = this.filter(record);
-        if ((rv as any) instanceof LogRecord) { record = rv }
+        if ((rv as any) instanceof LogRecord) {
+            record = rv as unknown as LogRecord
+        }
         if (rv) {
             //locking here
             this.emit(record)
@@ -867,7 +886,7 @@ export class Handler extends Filterer {
     close() {
         this._closed = true;
 
-        if (this.scope && handlers.keys().includes(this.scope)) {
+        if (this.scope && Object.keys(handlers).includes(this.scope)) {
             delete handlers[this.scope]
         }
     }
@@ -893,9 +912,9 @@ export class Handler extends Filterer {
 export class StderrHandler extends Handler {
 
     constructor(level: LogLevel) {
-        super();
+        super(level);
     }
 }
 
-const defaultLastResort = StderrHandler(WARNING);
+const defaultLastResort = new StderrHandler(WARNING);
 export var lastResort = defaultLastResort;
