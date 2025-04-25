@@ -2,7 +2,7 @@ NPM=npm
 
 .PHONY: configure chore package-lock.json publish dist test-reports
 
-all: test-reports/ dist/
+all: test-reports dist
 
 tags:
 	ctags -R --exclude=node_modules --exclude=vendor --exclude=docs \
