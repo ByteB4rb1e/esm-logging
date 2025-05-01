@@ -50,7 +50,7 @@ Description: [Detailed explanation]
 ID: 1
 Type: feature
 Title: string formatting utilities
-Status: open
+Status: in-progress
 Priority: high
 Created: 2025-05-01
 Description: implement utilities for formatting strings. The formatting should
