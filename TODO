@@ -26,6 +26,7 @@ preserve Git diffing.
 ### Issue Format
 
 ```
+
 ID: [ISSUE-NUMBER]
 Type: [feature/bugfix/hotfix]
 Title: [Short title]
@@ -56,5 +57,19 @@ Description: implement utilities for formatting strings. The formatting should
              be inspired by Python 3K PEP 3101 in addition to their standard
              library utilities starting from ver. 3.7. Optimizations should
              focus on V8 support.
+
+---
+
+ID: 2
+Type: feature
+Title: describe development workflow in CONTRIBUTING.md
+Status: open
+Priority: medium
+Created: 2025-05-01
+Description: It's a good idea to describe the development workflow, including
+             branching strategies earlier on, so that if someone is interested
+             in forking, they can pick up right away. It's not meant for
+             contributions though. I'm currently not interested in external
+             contributions.
 
 ---
