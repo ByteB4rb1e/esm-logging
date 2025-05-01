@@ -73,3 +73,16 @@ Description: It's a good idea to describe the development workflow, including
              contributions.
 
 ---
+
+ID: 3
+Type: bugfix
+Title: modularize testing further
+Status: open
+Priority: high
+Created: 2025-05-01
+Description: Since I am going to implement unit tests as well as integration
+             tests and probably some benchmarks, it makes sense to introduce
+             another sub-level directory for each type of test, say
+             `tests/unit/`, `tests/integration`, etc.
+
+---
