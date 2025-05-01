@@ -77,12 +77,28 @@ Description: It's a good idea to describe the development workflow, including
 ID: 3
 Type: bugfix
 Title: modularize testing further
-Status: in-progress
+Status: done
 Priority: high
 Created: 2025-05-01
 Description: Since I am going to implement unit tests as well as integration
              tests and probably some benchmarks, it makes sense to introduce
              another sub-level directory for each type of test, say
              `tests/unit/`, `tests/integration`, etc.
+
+---
+
+ID: 4
+Type: feature
+Title: migrate testing framework from Jest to Mocha
+Status: open
+Priority: high
+Created: 2025-05-01
+Description: I really don't like behavior-driven testing, at least when it comes
+             to unit testing. It feels like Walldorf education... Where I need
+             to come up with an abstraction for describing my test. A function
+             has an input and gives an output. That's what I want to test. I'm
+             not trying to find the philosophical meaning of my functions...
+             Hopefully Mocha is the savior. I'm sticking to xUnit based testing
+             from now on.
 
 ---
