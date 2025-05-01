@@ -90,7 +90,7 @@ Description: Since I am going to implement unit tests as well as integration
 ID: 4
 Type: feature
 Title: migrate testing framework from Jest to Mocha
-Status: open
+Status: in-progress
 Priority: high
 Created: 2025-05-01
 Description: I really don't like behavior-driven testing, at least when it comes
