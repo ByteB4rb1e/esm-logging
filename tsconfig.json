@@ -15,6 +15,7 @@
         "lib": ["esnext.weakref", "dom"]
     },
     "include": [
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "src/types/**/*.d.ts"
     ]
 }
