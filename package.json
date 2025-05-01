@@ -1,5 +1,5 @@
 {
-    "name": "administratrix/esm-logging",
+    "name": "@administratrix/esm-logging",
     "version": "1.0.0",
     "description": "port of Python standard library logging module",
     "main": "lib/index.js",
@@ -24,7 +24,12 @@
         "jest-junit": "^16.0.0",
         "ts-jest": "^29.3.2",
         "ts-node": "^10.9.2",
-        "typedoc": "^0.27.9",
+        "typedoc": "^0.28.3",
         "typescript": "^5.8.3"
+    },
+    "overrides": {
+        "jest": {
+            "glob": "^11.0.1"
+        }
     }
 }

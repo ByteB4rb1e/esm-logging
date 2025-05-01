@@ -94,7 +94,7 @@ export * as formatter from './formatter';
 export * as handler from './handler';
 // screw community conventions, whoever came up with the idea of aliasing
 // imports in pascal case, or camel case doesn't seem to care about naming
-// collisions. I'm sticking to kebab case as this avoids naming collisions.
+// collisions. I'm sticking to snake case as this avoids naming collisions.
 export * as log_level from './log-level';
 export * as log_record from './log-record';
 export * as logger from './logger';

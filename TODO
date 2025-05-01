@@ -1,0 +1,75 @@
+# TODO List for esm-logging
+
+This is a poor-man's issue tracker. I am not primarily a GitHub user so don't
+want to commit to their issue tracking feature, but my primary SVC service
+provider (Bitbucket) only offers paid integration into their issue tracker
+(Jira). I don't have the time (and patience) at the moment to analyze the best
+approach, so this file will have to suffice.
+
+It's a very simple concept: Track any issues (features, bugfixes, hotfixes) in
+here, assign a sequential number to it and use that number when branching.
+
+I will try to develop a format so that I can parse the file later on, should I
+decide to migrate to a real issue tracker. It's probably going to be Bugzilla,
+but for that my html-theme-ref project needs to stabilize first.
+
+## Format Specification
+
+The file uses Markdown conventions for formatting headers and other text block
+entitities, but SHOULD NOT be considered a Markdown file. That's why it has no
+definitive file extension.
+
+Each issue entry follows a structured format for easier parsing and future
+migration.  Issues MUST be **appended** to this file and never moved, to
+preserve Git diffing.
+
+### Issue Format
+
+```
+
+ID: [ISSUE-NUMBER]
+Type: [feature/bugfix/hotfix]
+Title: [Short title]
+Status: [open/in-progress/done]
+Priority: [low/medium/high]
+Created: [YYYY-MM-DD]
+Description: [Detailed explanation]
+
+---
+```
+
+- ISSUE-NUMBERs must be sequential
+- truncation of description must be indentended so that every line starts at the
+  same column
+- issues must be started with two LF
+- issues must be terminated with two LF, then `---`
+- issues may have a free-text field (epilog), which must be started with two LF.
+
+## Issues
+
+ID: 1
+Type: feature
+Title: string formatting utilities
+Status: open
+Priority: high
+Created: 2025-05-01
+Description: implement utilities for formatting strings. The formatting should
+             be inspired by Python 3K PEP 3101 in addition to their standard
+             library utilities starting from ver. 3.7. Optimizations should
+             focus on V8 support.
+
+---
+
+ID: 2
+Type: feature
+Title: describe development workflow in CONTRIBUTING.md
+Status: open
+Priority: medium
+Created: 2025-05-01
+Description: It's a good idea to describe the development workflow, including
+             branching strategies earlier on, so that if someone is interested
+             in forking, they can pick up right away. It's not meant for
+             contributions though. I'm currently not interested in external
+             contributions.
+
+---
