@@ -77,7 +77,7 @@ Description: It's a good idea to describe the development workflow, including
 ID: 3
 Type: bugfix
 Title: modularize testing further
-Status: open
+Status: in-progress
 Priority: high
 Created: 2025-05-01
 Description: Since I am going to implement unit tests as well as integration
